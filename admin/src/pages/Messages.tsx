@@ -13,7 +13,7 @@ const Messages = () => {
 
   const fetchMessages = async () => {
     try {
-      const res = await fetch("http://localhost:3001/api/messages");
+      const res = await fetch("https://frugoo.onrender.com/api/messages");
       const data = await res.json();
       setMessages(data);
     } catch (err) {
@@ -36,7 +36,7 @@ const Messages = () => {
 
   const markReplied = async (id: number) => {
     try {
-      const res = await fetch(`http://localhost:3001/api/messages/${id}/status`, {
+      const res = await fetch(`https://frugoo.onrender.com/api/messages/${id}/status`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "REPLIED" })
@@ -51,7 +51,7 @@ const Messages = () => {
 
   const deleteMessage = async (id: number) => {
     try {
-      const res = await fetch(`http://localhost:3001/api/messages/${id}`, {
+      const res = await fetch(`https://frugoo.onrender.com/api/messages/${id}`, {
         method: "DELETE"
       });
       if (res.ok) {

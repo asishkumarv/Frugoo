@@ -88,7 +88,7 @@ const OrdersTable = () => {
   const ordersPerPage = 50;
 
   useEffect(() => {
-    fetch("http://localhost:3001/api/orders")
+    fetch("https://frugoo.onrender.com/api/orders")
       .then(res => res.json())
       .then(data => {
         const formatted = data.map((o: any) => ({
@@ -109,7 +109,7 @@ const OrdersTable = () => {
 
   const updateOrderStatus = async (id: string, newStatus: string) => {
     try {
-      const res = await fetch(`http://localhost:3001/api/orders/${id}/status`, {
+      const res = await fetch(`https://frugoo.onrender.com/api/orders/${id}/status`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus })

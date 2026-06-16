@@ -23,7 +23,7 @@ const HeroVideos = () => {
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/hero-videos')
+    fetch('https://frugoo.onrender.com/api/hero-videos')
       .then(res => res.json())
       .then((videos: any[]) => {
         setSlides(
@@ -68,7 +68,7 @@ const HeroVideos = () => {
     const fileName = slides[idx].fileName;
     if (!draft) return;
     try {
-      await fetch('http://localhost:3001/api/hero-videos', {
+      await fetch('https://frugoo.onrender.com/api/hero-videos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ slideIndex: idx, saved: draft, fileName })
@@ -86,7 +86,7 @@ const HeroVideos = () => {
 
   const removeSlide = async (idx: number) => {
     try {
-      await fetch(`http://localhost:3001/api/hero-videos/${idx}`, { method: 'DELETE' });
+      await fetch(`https://frugoo.onrender.com/api/hero-videos/${idx}`, { method: 'DELETE' });
       setSlides((prev) => {
         const next = [...prev];
         next[idx] = { saved: null, draft: null, fileName: null };

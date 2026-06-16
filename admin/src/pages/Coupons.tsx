@@ -47,7 +47,7 @@ const Coupons = () => {
 
   // Load from API on mount
   useEffect(() => {
-    fetch('http://localhost:3001/api/coupons')
+    fetch('https://frugoo.onrender.com/api/coupons')
       .then(res => res.json())
       .then(data => setCoupons(data))
       .catch(err => console.error(err));
@@ -67,7 +67,7 @@ const Coupons = () => {
     };
 
     try {
-      const res = await fetch('http://localhost:3001/api/coupons', {
+      const res = await fetch('https://frugoo.onrender.com/api/coupons', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -90,7 +90,7 @@ const Coupons = () => {
   const confirmDelete = async () => {
     if (deleteId == null) return;
     try {
-      await fetch(`http://localhost:3001/api/coupons/${deleteId}`, { method: 'DELETE' });
+      await fetch(`https://frugoo.onrender.com/api/coupons/${deleteId}`, { method: 'DELETE' });
       const removed = coupons.find((c) => c.id === deleteId);
       setCoupons(coupons.filter((c) => c.id !== deleteId));
       setDeleteId(null);

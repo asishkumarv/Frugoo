@@ -35,7 +35,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // we should let the caller handle it or update the interface. Wait, `admin/src/pages/Login.tsx` does:
     // `const success = login(email, password);`
     // We can't change it to async without breaking it. We need to update Login.tsx as well!
-    return fetch('http://localhost:3001/api/admin/login', {
+    return fetch('https://frugoo.onrender.com/api/admin/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })

@@ -17,7 +17,7 @@ export function TrackOrder() {
     setTrackingResult(null);
 
     try {
-      const res = await fetch(`http://localhost:3001/api/orders/${orderId.trim()}`);
+      const res = await fetch(`https://frugoo.onrender.com/api/orders/${orderId.trim()}`);
       const data = await res.json();
 
       if (data.success && data.order) {

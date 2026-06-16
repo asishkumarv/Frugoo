@@ -16,7 +16,7 @@ const Delivery = () => {
   const [deliveries, setDeliveries] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch("http://localhost:3001/api/orders")
+    fetch("https://frugoo.onrender.com/api/orders")
       .then(res => res.json())
       .then(data => setDeliveries(data.reverse()))
       .catch(console.error);

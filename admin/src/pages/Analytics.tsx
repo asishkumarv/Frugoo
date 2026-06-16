@@ -8,7 +8,7 @@ const Analytics = () => {
   const [data, setData] = useState<any>(null);
 
   useEffect(() => {
-    fetch("http://localhost:3001/api/analytics")
+    fetch("https://frugoo.onrender.com/api/analytics")
       .then(res => res.json())
       .then(setData)
       .catch(console.error);

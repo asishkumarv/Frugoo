@@ -13,7 +13,7 @@ export function ProductProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/products')
+    fetch('https://frugoo.onrender.com/api/products')
       .then(res => res.json())
       .then(data => {
         setProducts(data);

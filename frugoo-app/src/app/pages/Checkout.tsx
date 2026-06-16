@@ -29,7 +29,7 @@ export function Checkout() {
     const code = couponCode.toUpperCase().trim();
     if (!code) return;
     try {
-      const res = await fetch(`http://localhost:3001/api/coupons/validate/${code}`);
+      const res = await fetch(`https://frugoo.onrender.com/api/coupons/validate/${code}`);
       const data = await res.json();
       if (data.success) {
         setAppliedCoupon({ code, discount: data.discount });
@@ -67,7 +67,7 @@ export function Checkout() {
         couponCode: appliedCoupon ? appliedCoupon.code : undefined
       };
 
-      const res = await fetch('http://localhost:3001/api/orders', {
+      const res = await fetch('https://frugoo.onrender.com/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderPayload)

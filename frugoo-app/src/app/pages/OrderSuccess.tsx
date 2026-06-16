@@ -24,7 +24,7 @@ export function OrderSuccess() {
   useEffect(() => {
     clearCart();
     if (location.state?.orderId) {
-      fetch(`http://localhost:3001/api/orders/${location.state.orderId}`)
+      fetch(`https://frugoo.onrender.com/api/orders/${location.state.orderId}`)
         .then(res => res.json())
         .then(data => {
           if (data.success) {

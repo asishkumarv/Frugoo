@@ -15,7 +15,7 @@ const Customers = () => {
   const [customers, setCustomers] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch("http://localhost:3001/api/users")
+    fetch("https://frugoo.onrender.com/api/users")
       .then(res => res.json())
       .then(data => {
         const formatted = data.map((u: any) => ({

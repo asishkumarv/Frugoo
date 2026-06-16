@@ -26,7 +26,7 @@ const Products = () => {
   const [editProduct, setEditProduct] = useState<Product | null>(null);
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/products')
+    fetch('https://frugoo.onrender.com/api/products')
       .then(res => res.json())
       .then(data => setProducts(data))
       .catch(err => console.error(err));
@@ -92,7 +92,7 @@ const Products = () => {
     };
 
     if (editProduct) {
-      const res = await fetch(`http://localhost:3001/api/products/${editProduct.id}`, {
+      const res = await fetch(`https://frugoo.onrender.com/api/products/${editProduct.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -100,7 +100,7 @@ const Products = () => {
       const updated = await res.json();
       setProducts(products.map((p) => p.id === editProduct.id ? updated : p));
     } else {
-      const res = await fetch('http://localhost:3001/api/products', {
+      const res = await fetch('https://frugoo.onrender.com/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -112,7 +112,7 @@ const Products = () => {
   };
 
   const handleDelete = async (id: number) => {
-    await fetch(`http://localhost:3001/api/products/${id}`, { method: 'DELETE' });
+    await fetch(`https://frugoo.onrender.com/api/products/${id}`, { method: 'DELETE' });
     setProducts(products.filter((p) => p.id !== id));
   };
 
