@@ -2,11 +2,21 @@ import { Outlet, useNavigate } from "react-router-dom";
 import AdminSidebar from "./AdminSidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { SidebarProvider, useSidebarContext } from "@/contexts/SidebarContext";
-import { Menu } from "lucide-react";
-import { useEffect } from "react";
+import { Menu, RefreshCw } from "lucide-react";
+import { useEffect, useState } from "react";
 
 const AdminContent = () => {
   const { collapsed, isMobile, setMobileOpen } = useSidebarContext();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    setRefreshKey(prev => prev + 1);
+    // Simulate a short spin to give visual feedback
+    setTimeout(() => setIsRefreshing(false), 500);
+  };
 
   return (
     <div className="flex min-h-screen bg-background overflow-x-hidden">
@@ -16,15 +26,28 @@ const AdminContent = () => {
           isMobile ? "ml-0" : collapsed ? "ml-20" : "ml-64"
         }`}
       >
-        {isMobile && (
+        <div className="flex items-center justify-between mb-6">
+          {isMobile ? (
+            <button
+              onClick={() => setMobileOpen(true)}
+              className="p-2 rounded-lg bg-card shadow-card text-foreground hover:bg-muted transition-colors"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          ) : <div />}
+          
           <button
-            onClick={() => setMobileOpen(true)}
-            className="mb-4 p-2 rounded-lg bg-card shadow-card text-foreground hover:bg-muted transition-colors"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-foreground bg-card border border-border shadow-sm hover:bg-muted transition-colors rounded-lg"
           >
-            <Menu className="w-5 h-5" />
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
+            Refresh Data
           </button>
-        )}
-        <Outlet />
+        </div>
+        <div key={refreshKey} className="animate-fade-in">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

@@ -10,16 +10,36 @@ import { toast } from "sonner";
 export function Contact() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulate form submission
-    setTimeout(() => {
+    const form = e.target as HTMLFormElement;
+    const name = (form.elements.namedItem('name') as HTMLInputElement).value;
+    const email = (form.elements.namedItem('email') as HTMLInputElement).value;
+    const phone = (form.elements.namedItem('phone') as HTMLInputElement).value;
+    const subject = (form.elements.namedItem('subject') as HTMLInputElement).value;
+    const rawMessage = (form.elements.namedItem('message') as HTMLTextAreaElement).value;
+
+    const fullMessage = `Subject: ${subject}\nPhone: ${phone || 'N/A'}\n\n${rawMessage}`;
+
+    try {
+      const res = await fetch('https://frugoo.onrender.com/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, message: fullMessage })
+      });
+      if (res.ok) {
+        toast.success("Message sent successfully! We'll get back to you soon.");
+        form.reset();
+      } else {
+        toast.error("Failed to send message. Please try again.");
+      }
+    } catch (err) {
+      toast.error("An error occurred. Please try again.");
+    } finally {
       setIsSubmitting(false);
-      toast.success("Message sent successfully! We'll get back to you soon.");
-      (e.target as HTMLFormElement).reset();
-    }, 1500);
+    }
   };
 
   return (
@@ -50,28 +70,29 @@ export function Contact() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="name">Full Name *</Label>
-                      <Input id="name" required className="mt-1" />
+                      <Input id="name" name="name" required className="mt-1" />
                     </div>
                     <div>
                       <Label htmlFor="email">Email Address *</Label>
-                      <Input id="email" type="email" required className="mt-1" />
+                      <Input id="email" name="email" type="email" required className="mt-1" />
                     </div>
                   </div>
                   
                   <div>
                     <Label htmlFor="phone">Phone Number</Label>
-                    <Input id="phone" type="tel" className="mt-1" />
+                    <Input id="phone" name="phone" type="tel" className="mt-1" />
                   </div>
 
                   <div>
                     <Label htmlFor="subject">Subject *</Label>
-                    <Input id="subject" required className="mt-1" />
+                    <Input id="subject" name="subject" required className="mt-1" />
                   </div>
 
                   <div>
                     <Label htmlFor="message">Message *</Label>
                     <Textarea 
                       id="message" 
+                      name="message"
                       required 
                       className="mt-1 min-h-[150px]"
                       placeholder="Tell us how we can help you..."

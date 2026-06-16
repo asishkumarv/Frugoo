@@ -1,21 +1,16 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
-const defaultData = [
-  { name: "Mon", revenue: 18500 },
-  { name: "Tue", revenue: 24200 },
-  { name: "Wed", revenue: 31800 },
-  { name: "Thu", revenue: 28400 },
-  { name: "Fri", revenue: 35600 },
-  { name: "Sat", revenue: 42100 },
-  { name: "Sun", revenue: 38900 },
-];
-
-const RevenueChart = ({ data = defaultData }: { data?: any[] }) => (
+const RevenueChart = ({ data = [] }: { data?: any[] }) => (
   <div className="bg-card rounded-xl shadow-card p-5 animate-fade-in">
     <h2 className="text-lg font-display font-bold text-foreground mb-4">Revenue Overview</h2>
-    <ResponsiveContainer width="100%" height={280}>
-      <AreaChart data={data}>
-        <defs>
+    {data.length === 0 ? (
+      <div className="flex items-center justify-center w-full h-[280px] text-sm text-muted-foreground">
+        Loading revenue data...
+      </div>
+    ) : (
+      <ResponsiveContainer width="100%" height={280}>
+        <AreaChart data={data}>
+          <defs>
           <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
             <stop offset="5%" stopColor="hsl(145 63% 42%)" stopOpacity={0.3} />
             <stop offset="95%" stopColor="hsl(145 63% 42%)" stopOpacity={0} />
@@ -36,6 +31,7 @@ const RevenueChart = ({ data = defaultData }: { data?: any[] }) => (
         <Area type="monotone" dataKey="revenue" stroke="hsl(145 63% 42%)" strokeWidth={2.5} fill="url(#colorRevenue)" />
       </AreaChart>
     </ResponsiveContainer>
+    )}
   </div>
 );
 
