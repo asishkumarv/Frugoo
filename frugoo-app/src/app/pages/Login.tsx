@@ -129,19 +129,7 @@ export function Login() {
           </CardFooter>
         </Card>
 
-        {/* Demo Credentials */}
-        <div className="mt-6 p-4 bg-white rounded-lg border border-gray-200">
-          <p className="text-sm font-semibold text-gray-700 mb-2">Demo Account:</p>
-          <p className="text-xs text-gray-600">
-            Email: <span className="font-mono">demo@frugoo.com</span>
-          </p>
-          <p className="text-xs text-gray-600">
-            Password: <span className="font-mono">demo123</span>
-          </p>
-          <p className="text-xs text-gray-500 mt-2">
-            Or register a new account to get started!
-          </p>
-        </div>
+
       </div>
     </div>
   );

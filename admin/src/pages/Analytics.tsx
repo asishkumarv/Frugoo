@@ -1,36 +1,32 @@
+import { useState, useEffect } from "react";
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { TrendingUp, TrendingDown, Users, ShoppingCart, IndianRupee, Eye } from "lucide-react";
 
-const revenueData = [
-  { month: "Oct", revenue: 42000, orders: 85 },
-  { month: "Nov", revenue: 58000, orders: 120 },
-  { month: "Dec", revenue: 75000, orders: 165 },
-  { month: "Jan", revenue: 62000, orders: 130 },
-  { month: "Feb", revenue: 88000, orders: 195 },
-  { month: "Mar", revenue: 105000, orders: 247 },
-];
+// Using dynamic data from backend now
 
-const categoryData = [
-  { name: "Mangoes", value: 35, color: "hsl(35, 90%, 55%)" },
-  { name: "Apples", value: 20, color: "hsl(0, 72%, 51%)" },
-  { name: "Citrus", value: 18, color: "hsl(35, 90%, 55%)" },
-  { name: "Dry Fruits", value: 15, color: "hsl(145, 63%, 42%)" },
-  { name: "Others", value: 12, color: "hsl(200, 70%, 50%)" },
-];
+const Analytics = () => {
+  const [data, setData] = useState<any>(null);
 
-const dailyOrders = [
-  { day: "Mon", orders: 32 }, { day: "Tue", orders: 28 }, { day: "Wed", orders: 45 },
-  { day: "Thu", orders: 38 }, { day: "Fri", orders: 52 }, { day: "Sat", orders: 65 }, { day: "Sun", orders: 42 },
-];
+  useEffect(() => {
+    fetch("http://localhost:3001/api/analytics")
+      .then(res => res.json())
+      .then(setData)
+      .catch(console.error);
+  }, []);
 
-const kpis = [
-  { label: "Total Revenue", value: "₹4,30,000", change: "+18.2%", up: true, icon: IndianRupee },
-  { label: "Total Orders", value: "942", change: "+12.5%", up: true, icon: ShoppingCart },
-  { label: "New Customers", value: "156", change: "+8.3%", up: true, icon: Users },
-  { label: "Avg. Order Value", value: "₹456", change: "-2.1%", up: false, icon: Eye },
-];
+  const kpis = data ? [
+    { label: "Total Revenue", value: `₹${data.totalRevenue.toLocaleString()}`, change: "Up to date", up: true, icon: IndianRupee },
+    { label: "Total Orders", value: `${data.totalOrders}`, change: "Up to date", up: true, icon: ShoppingCart },
+    { label: "Pending Orders", value: `${data.pendingOrders}`, change: "Needs attention", up: false, icon: Users },
+    { label: "Avg. Order Value", value: `₹${(data.totalOrders ? data.totalRevenue / data.totalOrders : 0).toFixed(0)}`, change: "Up to date", up: true, icon: Eye },
+  ] : [
+    { label: "Total Revenue", value: "...", change: "", up: true, icon: IndianRupee },
+    { label: "Total Orders", value: "...", change: "", up: true, icon: ShoppingCart },
+    { label: "Pending Orders", value: "...", change: "", up: true, icon: Users },
+    { label: "Avg. Order Value", value: "...", change: "", up: true, icon: Eye },
+  ];
 
-const Analytics = () => (
+  return (
   <div className="animate-fade-in">
     <div className="mb-6">
       <h1 className="text-2xl font-display font-bold text-foreground">Analytics</h1>
@@ -56,7 +52,7 @@ const Analytics = () => (
       <div className="lg:col-span-2 bg-card rounded-xl border border-border p-5 shadow-card">
         <h3 className="font-display font-semibold text-foreground mb-4">Revenue Trend</h3>
         <ResponsiveContainer width="100%" height={280}>
-          <AreaChart data={revenueData}>
+          <AreaChart data={data?.recentRevenue || []}>
             <defs>
               <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="hsl(145, 63%, 42%)" stopOpacity={0.3} />
@@ -64,7 +60,7 @@ const Analytics = () => (
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(140, 15%, 88%)" />
-            <XAxis dataKey="month" tick={{ fontSize: 12, fill: "hsl(150, 10%, 45%)" }} />
+            <XAxis dataKey="name" tick={{ fontSize: 12, fill: "hsl(150, 10%, 45%)" }} />
             <YAxis tick={{ fontSize: 12, fill: "hsl(150, 10%, 45%)" }} />
             <Tooltip contentStyle={{ borderRadius: "12px", border: "1px solid hsl(140,15%,88%)", fontSize: "13px" }} />
             <Area type="monotone" dataKey="revenue" stroke="hsl(145, 63%, 42%)" fill="url(#revGrad)" strokeWidth={2} />
@@ -76,8 +72,8 @@ const Analytics = () => (
         <h3 className="font-display font-semibold text-foreground mb-4">Sales by Category</h3>
         <ResponsiveContainer width="100%" height={280}>
           <PieChart>
-            <Pie data={categoryData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={4} dataKey="value">
-              {categoryData.map((entry) => (
+            <Pie data={data?.categoryData || []} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={4} dataKey="value">
+              {(data?.categoryData || []).map((entry: any) => (
                 <Cell key={entry.name} fill={entry.color} />
               ))}
             </Pie>
@@ -91,10 +87,10 @@ const Analytics = () => (
     <div className="bg-card rounded-xl border border-border p-5 shadow-card">
       <h3 className="font-display font-semibold text-foreground mb-4">Orders This Week</h3>
       <ResponsiveContainer width="100%" height={220}>
-        <BarChart data={dailyOrders}>
-          <CartesianGrid strokeDasharray="3 3" stroke="hsl(140, 15%, 88%)" />
-          <XAxis dataKey="day" tick={{ fontSize: 12, fill: "hsl(150, 10%, 45%)" }} />
-          <YAxis tick={{ fontSize: 12, fill: "hsl(150, 10%, 45%)" }} />
+        <BarChart data={data?.recentRevenue || []}>
+          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(140, 15%, 88%)" />
+          <XAxis dataKey="name" tick={{ fontSize: 12, fill: "hsl(150, 10%, 45%)" }} axisLine={false} tickLine={false} />
+          <YAxis tick={{ fontSize: 12, fill: "hsl(150, 10%, 45%)" }} axisLine={false} tickLine={false} />
           <Tooltip contentStyle={{ borderRadius: "12px", border: "1px solid hsl(140,15%,88%)", fontSize: "13px" }} />
           <Bar dataKey="orders" fill="hsl(145, 63%, 42%)" radius={[6, 6, 0, 0]} />
         </BarChart>
@@ -102,5 +98,6 @@ const Analytics = () => (
     </div>
   </div>
 );
+}
 
 export default Analytics;

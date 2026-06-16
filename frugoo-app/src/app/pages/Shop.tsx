@@ -79,7 +79,7 @@ export function Shop() {
     }
 
     return filtered;
-  }, [searchQuery, selectedCategory, sortBy, priceRange]);
+  }, [products, searchQuery, selectedCategory, sortBy, priceRange]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -181,7 +181,12 @@ export function Shop() {
         </div>
 
         {/* Products Grid */}
-        {filteredProducts.length > 0 ? (
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-16">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mb-4"></div>
+            <p className="text-gray-500">Loading fresh fruits...</p>
+          </div>
+        ) : filteredProducts.length > 0 ? (
           <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {filteredProducts.map((product) => (
               <div key={product.id} id={`product-${product.id}`} className="transition-all duration-300">

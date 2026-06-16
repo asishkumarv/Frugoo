@@ -1,31 +1,40 @@
 import { Badge } from "@/components/ui/badge";
 import { Truck, MapPin, Clock, CheckCircle, Package, AlertCircle } from "lucide-react";
 
-const deliveries = [
-  { id: "DEL-001", order: "ORD-001", customer: "Rajesh Kumar", address: "12 MG Road, Pune", rider: "Suresh M.", status: "Delivered", eta: "Completed", time: "2:30 PM" },
-  { id: "DEL-002", order: "ORD-002", customer: "Priya Sharma", address: "45 Banjara Hills, Hyderabad", rider: "Ramesh K.", status: "In Transit", eta: "15 mins", time: "3:45 PM" },
-  { id: "DEL-003", order: "ORD-003", customer: "Amit Patel", address: "78 SG Highway, Ahmedabad", rider: "Kiran D.", status: "Picked Up", eta: "45 mins", time: "4:00 PM" },
-  { id: "DEL-004", order: "ORD-004", customer: "Sneha Reddy", address: "23 Koramangala, Bangalore", rider: "Unassigned", status: "Pending", eta: "—", time: "4:15 PM" },
-  { id: "DEL-005", order: "ORD-007", customer: "Deepak Joshi", address: "89 Aundh, Pune", rider: "Suresh M.", status: "In Transit", eta: "25 mins", time: "3:30 PM" },
-  { id: "DEL-006", order: "ORD-008", customer: "Kavita Nair", address: "12 MG Road, Kochi", rider: "Anil P.", status: "Failed", eta: "—", time: "1:00 PM" },
-];
+import { useState, useEffect } from "react";
 
 const statusConfig: Record<string, { color: string; icon: typeof Truck }> = {
   Delivered: { color: "bg-primary/15 text-primary", icon: CheckCircle },
   "In Transit": { color: "bg-chart-5/15 text-chart-5", icon: Truck },
   "Picked Up": { color: "bg-secondary/15 text-secondary", icon: Package },
+  Processing: { color: "bg-accent/15 text-accent", icon: Package },
   Pending: { color: "bg-muted text-muted-foreground", icon: Clock },
-  Failed: { color: "bg-destructive/15 text-destructive", icon: AlertCircle },
+  Cancelled: { color: "bg-destructive/15 text-destructive", icon: AlertCircle },
 };
 
-const stats = [
-  { label: "Today's Deliveries", value: "12", icon: Truck, color: "text-primary" },
-  { label: "In Transit", value: "4", icon: MapPin, color: "text-chart-5" },
-  { label: "Completed", value: "7", icon: CheckCircle, color: "text-primary" },
-  { label: "Failed", value: "1", icon: AlertCircle, color: "text-destructive" },
-];
+const Delivery = () => {
+  const [deliveries, setDeliveries] = useState<any[]>([]);
 
-const Delivery = () => (
+  useEffect(() => {
+    fetch("http://localhost:3001/api/orders")
+      .then(res => res.json())
+      .then(data => setDeliveries(data.reverse()))
+      .catch(console.error);
+  }, []);
+
+  const todayDeliveries = deliveries.filter(d => new Date(d.date).toDateString() === new Date().toDateString()).length;
+  const inTransit = deliveries.filter(d => d.status === "In Transit").length;
+  const completed = deliveries.filter(d => d.status === "Delivered").length;
+  const cancelled = deliveries.filter(d => d.status === "Cancelled").length;
+
+  const stats = [
+    { label: "Today's Deliveries", value: todayDeliveries, icon: Truck, color: "text-primary" },
+    { label: "In Transit", value: inTransit, icon: MapPin, color: "text-chart-5" },
+    { label: "Completed", value: completed, icon: CheckCircle, color: "text-primary" },
+    { label: "Cancelled", value: cancelled, icon: AlertCircle, color: "text-destructive" },
+  ];
+
+  return (
   <div className="animate-fade-in">
     <div className="mb-6">
       <h1 className="text-2xl font-display font-bold text-foreground">Delivery</h1>
@@ -61,17 +70,17 @@ const Delivery = () => (
         </thead>
         <tbody>
           {deliveries.map((d) => {
-            const cfg = statusConfig[d.status];
+            const cfg = statusConfig[d.status] || statusConfig["Pending"];
             return (
               <tr key={d.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
                 <td className="px-4 py-3">
                   <p className="text-sm font-mono font-medium text-foreground">{d.id}</p>
-                  <p className="text-xs text-muted-foreground">{d.order}</p>
+                  <p className="text-xs text-muted-foreground">{new Date(d.date).toLocaleDateString()}</p>
                 </td>
                 <td className="px-4 py-3 text-sm text-foreground">{d.customer}</td>
                 <td className="px-4 py-3 text-sm text-muted-foreground max-w-[200px] truncate">{d.address}</td>
-                <td className="px-4 py-3 text-sm text-foreground">{d.rider}</td>
-                <td className="px-4 py-3 text-sm text-foreground">{d.eta}</td>
+                <td className="px-4 py-3 text-sm text-foreground">Unassigned</td>
+                <td className="px-4 py-3 text-sm text-foreground">—</td>
                 <td className="px-4 py-3"><Badge className={`${cfg.color} border-0 text-xs`}>{d.status}</Badge></td>
               </tr>
             );
@@ -81,6 +90,7 @@ const Delivery = () => (
       </div>
     </div>
   </div>
-);
+  );
+};
 
 export default Delivery;

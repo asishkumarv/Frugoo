@@ -30,15 +30,34 @@ const Orders = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [tempStatus, setTempStatus] = useState<string>("");
   const [page, setPage] = useState(1);
-  const perPage = 6;
+  const perPage = 50;
 
   useEffect(() => {
     fetch('http://localhost:3001/api/orders')
       .then(res => res.json())
-      .then(data => setOrders(data))
+      .then(data => {
+        const sorted = data.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setOrders(sorted);
+      })
       .catch(err => console.error(err));
   }, []);
+
+  const updateOrderStatus = async (id: string, newStatus: string) => {
+    try {
+      const res = await fetch(`http://localhost:3001/api/orders/${id}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (res.ok) {
+        setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const statuses = ["All", "Pending", "Processing", "Shipped", "Delivered", "Cancelled"];
   const filtered = orders.filter(
@@ -98,7 +117,10 @@ const Orders = () => {
                 <td className="px-4 py-3 text-sm font-semibold text-foreground">₹{order.total}</td>
                 <td className="px-4 py-3"><Badge className={`${statusStyle[order.status]} border-0 text-xs`}>{order.status}</Badge></td>
                 <td className="px-4 py-3">
-                  <button onClick={() => setSelectedOrder(order)} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground">
+                  <button onClick={() => {
+                    setSelectedOrder(order);
+                    setTempStatus(order.status);
+                  }} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground">
                     <Eye className="w-4 h-4" />
                   </button>
                 </td>
@@ -141,7 +163,30 @@ const Orders = () => {
                 </div>
               </div>
               <div className="flex items-center justify-between pt-2 border-t border-border">
-                <Badge className={`${statusStyle[selectedOrder.status]} border-0`}>{selectedOrder.status}</Badge>
+                <div className="flex items-center gap-2">
+                  <select 
+                    value={tempStatus}
+                    onChange={(e) => setTempStatus(e.target.value)}
+                    className="bg-card border border-border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary text-sm text-foreground"
+                  >
+                    <option value="Pending">Pending</option>
+                    <option value="Processing">In Progress</option>
+                    <option value="In Transit">In Transit</option>
+                    <option value="Delivered">Delivered</option>
+                    <option value="Cancelled">Cancelled</option>
+                  </select>
+                  <Button 
+                    size="sm" 
+                    onClick={() => {
+                      if (selectedOrder && tempStatus !== selectedOrder.status) {
+                        updateOrderStatus(selectedOrder.id, tempStatus);
+                        setSelectedOrder({ ...selectedOrder, status: tempStatus });
+                      }
+                    }}
+                  >
+                    Update
+                  </Button>
+                </div>
                 <span className="text-lg font-bold text-foreground">₹{selectedOrder.total}</span>
               </div>
             </div>

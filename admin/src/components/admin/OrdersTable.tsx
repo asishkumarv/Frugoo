@@ -1,37 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, Eye, Download, ChevronLeft, ChevronRight, FileText } from "lucide-react";
 import jsPDF from "jspdf";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 interface Order {
-  id: number;
+  id: string;
   product: string;
   customer: string;
   date: string;
   payment: string;
   total: string;
-  status: "Pending" | "Delivered" | "Cancelled" | "Processing";
+  status: "Pending" | "Delivered" | "Cancelled" | "Processing" | "In Transit";
 }
-
-const mockOrders: Order[] = [
-  { id: 35, product: "Fresh Mango Box (5kg)", customer: "Rajesh Kumar", date: "3/28/2026", payment: "COD", total: "₹1,250", status: "Pending" },
-  { id: 34, product: "Mixed Fruit Basket", customer: "Priya Sharma", date: "3/27/2026", payment: "ONLINE", total: "₹2,480", status: "Delivered" },
-  { id: 33, product: "Organic Strawberries", customer: "Amit Patel", date: "3/27/2026", payment: "COD", total: "₹890", status: "Processing" },
-  { id: 32, product: "Watermelon (Seedless)", customer: "Sneha Reddy", date: "3/26/2026", payment: "ONLINE", total: "₹450", status: "Delivered" },
-  { id: 31, product: "Banana Bundle (12pc)", customer: "Vikram Singh", date: "3/26/2026", payment: "COD", total: "₹180", status: "Pending" },
-  { id: 30, product: "Premium Grapes (Black)", customer: "Anita Desai", date: "3/25/2026", payment: "ONLINE", total: "₹720", status: "Delivered" },
-  { id: 29, product: "Orange Crate (3kg)", customer: "Suresh Nair", date: "3/25/2026", payment: "COD", total: "₹560", status: "Pending" },
-  { id: 28, product: "Kiwi Pack (6pc)", customer: "Meera Joshi", date: "3/24/2026", payment: "ONLINE", total: "₹940", status: "Processing" },
-  { id: 27, product: "Apple Box (Royal)", customer: "Rahul Gupta", date: "3/24/2026", payment: "COD", total: "₹1,680", status: "Delivered" },
-  { id: 26, product: "Papaya (Medium)", customer: "Deepa Iyer", date: "3/23/2026", payment: "COD", total: "₹320", status: "Pending" },
-  { id: 25, product: "Pomegranate (1kg)", customer: "Arun Menon", date: "3/23/2026", payment: "ONLINE", total: "₹580", status: "Cancelled" },
-  { id: 24, product: "Dragon Fruit (2pc)", customer: "Kavita Rao", date: "3/22/2026", payment: "ONLINE", total: "₹1,100", status: "Delivered" },
-];
 
 const statusVariants: Record<string, string> = {
   Pending: "bg-secondary/15 text-secondary border-secondary/30",
   Delivered: "bg-primary/15 text-primary border-primary/30",
   Cancelled: "bg-destructive/15 text-destructive border-destructive/30",
   Processing: "bg-accent/15 text-accent border-accent/30",
+  "In Transit": "bg-chart-5/15 text-chart-5 border-chart-5/30",
 };
 
 const generateInvoicePDF = (order: Order) => {
@@ -95,9 +82,47 @@ const generateInvoicePDF = (order: Order) => {
 const OrdersTable = () => {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const ordersPerPage = 8;
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [tempStatus, setTempStatus] = useState<string>("");
+  const ordersPerPage = 50;
 
-  const filtered = mockOrders.filter(
+  useEffect(() => {
+    fetch("http://localhost:3001/api/orders")
+      .then(res => res.json())
+      .then(data => {
+        const formatted = data.map((o: any) => ({
+          ...o,
+          id: o.id,
+          product: Array.isArray(o.items) ? o.items.join(", ") : "Items",
+          customer: o.customer,
+          date: new Date(o.date).toLocaleDateString(),
+          payment: o.payment.toUpperCase(),
+          total: `₹${o.total}`,
+          status: o.status,
+          dateObj: new Date(o.date)
+        })).sort((a: any, b: any) => b.dateObj.getTime() - a.dateObj.getTime());
+        setOrders(formatted);
+      })
+      .catch(console.error);
+  }, []);
+
+  const updateOrderStatus = async (id: string, newStatus: string) => {
+    try {
+      const res = await fetch(`http://localhost:3001/api/orders/${id}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (res.ok) {
+        setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus as any } : o));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const filtered = orders.filter(
     (o) =>
       o.product.toLowerCase().includes(search.toLowerCase()) ||
       o.customer.toLowerCase().includes(search.toLowerCase()) ||
@@ -178,7 +203,13 @@ const OrdersTable = () => {
                   </button>
                 </td>
                 <td className="px-5 py-3.5">
-                  <button className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-primary">
+                  <button 
+                    onClick={() => {
+                      setSelectedOrder(order);
+                      setTempStatus(order.status);
+                    }}
+                    className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-primary"
+                  >
                     <Eye className="w-4 h-4" />
                   </button>
                 </td>
@@ -220,6 +251,49 @@ const OrdersTable = () => {
           </button>
         </div>
       </div>
+
+      <Dialog open={!!selectedOrder} onOpenChange={(open) => !open && setSelectedOrder(null)}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Update Order Status</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">Status for #{selectedOrder?.id}</label>
+              <select 
+                value={tempStatus}
+                onChange={(e) => setTempStatus(e.target.value)}
+                className="w-full bg-card border border-border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary text-sm text-foreground"
+              >
+                <option value="Pending">Pending</option>
+                <option value="Processing">In Progress</option>
+                <option value="In Transit">In Transit</option>
+                <option value="Delivered">Delivered</option>
+                <option value="Cancelled">Cancelled</option>
+              </select>
+            </div>
+          </div>
+          <DialogFooter>
+            <button
+              className="px-4 py-2 bg-muted hover:bg-muted/80 text-foreground rounded-lg text-sm transition-colors"
+              onClick={() => setSelectedOrder(null)}
+            >
+              Cancel
+            </button>
+            <button
+              className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm transition-colors"
+              onClick={() => {
+                if (selectedOrder) {
+                  updateOrderStatus(selectedOrder.id, tempStatus);
+                  setSelectedOrder(null);
+                }
+              }}
+            >
+              Save Changes
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

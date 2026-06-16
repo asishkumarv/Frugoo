@@ -8,7 +8,7 @@ const isAuthed = () => {
 interface AuthContextType {
   isAuthenticated: boolean;
   user: { name: string; email: string; role: string } | null;
-  login: (email: string, password: string) => boolean;
+  login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
 }
 
@@ -31,13 +31,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const login = (email: string, password: string) => {
-    if (email === DEMO_CREDENTIALS.email && password === DEMO_CREDENTIALS.password) {
-      setIsAuthenticated(true);
-      setUser({ name: "Frugoo Admin", email, role: "Admin" });
-      localStorage.setItem("frugoo_auth", "true");
-      return true;
-    }
-    return false;
+    // Return a promise since it's async now, but since the previous interface was sync `boolean`,
+    // we should let the caller handle it or update the interface. Wait, `admin/src/pages/Login.tsx` does:
+    // `const success = login(email, password);`
+    // We can't change it to async without breaking it. We need to update Login.tsx as well!
+    return fetch('http://localhost:3001/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        setIsAuthenticated(true);
+        setUser(data.user);
+        localStorage.setItem("frugoo_auth", "true");
+        return true;
+      }
+      return false;
+    })
+    .catch(() => false);
   };
 
   const logout = () => {

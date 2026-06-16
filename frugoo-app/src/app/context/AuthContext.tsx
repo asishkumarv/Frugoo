@@ -33,23 +33,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem("frugoo_user");
       }
     }
-
-    // Create demo user if it doesn't exist
-    const existingUsers = JSON.parse(localStorage.getItem("frugoo_users") || "[]");
-    const demoExists = existingUsers.some((u: any) => u.email === "demo@frugoo.com");
-    
-    if (!demoExists) {
-      const demoUser = {
-        id: "demo-user-1",
-        name: "Demo User",
-        email: "demo@frugoo.com",
-        phone: "+91 98765 43210",
-        password: "demo123",
-        createdAt: new Date().toISOString(),
-      };
-      existingUsers.push(demoUser);
-      localStorage.setItem("frugoo_users", JSON.stringify(existingUsers));
-    }
   }, []);
 
   const register = async (
@@ -105,13 +88,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const updatedUser = { ...user, ...data };
     setUser(updatedUser);
     localStorage.setItem("frugoo_user", JSON.stringify(updatedUser));
-
-    // Update in users list
-    const existingUsers = JSON.parse(localStorage.getItem("frugoo_users") || "[]");
-    const updatedUsers = existingUsers.map((u: any) =>
-      u.id === user.id ? { ...u, ...data } : u
-    );
-    localStorage.setItem("frugoo_users", JSON.stringify(updatedUsers));
   };
 
   return (

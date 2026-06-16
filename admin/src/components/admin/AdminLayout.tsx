@@ -1,4 +1,4 @@
-import { Outlet, useNavigate } from "@tanstack/react-router";
+import { Outlet, useNavigate } from "react-router-dom";
 import AdminSidebar from "./AdminSidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { SidebarProvider, useSidebarContext } from "@/contexts/SidebarContext";
@@ -35,7 +35,7 @@ const AdminLayout = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isAuthenticated) navigate({ to: "/login", replace: true });
+    if (!isAuthenticated) navigate("/login", { replace: true });
   }, [isAuthenticated, navigate]);
 
   if (!isAuthenticated) return null;

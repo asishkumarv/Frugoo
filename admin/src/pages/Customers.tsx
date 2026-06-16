@@ -1,18 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Search, Phone, Mail, MapPin, ShoppingBag } from "lucide-react";
-
-const customers = [
-  { id: 1, name: "Rajesh Kumar", email: "rajesh@email.com", phone: "+91 98765 43210", city: "Pune", orders: 12, spent: 8450, status: "Active", joined: "2025-11-15" },
-  { id: 2, name: "Priya Sharma", email: "priya@email.com", phone: "+91 87654 32109", city: "Hyderabad", orders: 8, spent: 5200, status: "Active", joined: "2025-12-01" },
-  { id: 3, name: "Amit Patel", email: "amit@email.com", phone: "+91 76543 21098", city: "Ahmedabad", orders: 15, spent: 12800, status: "VIP", joined: "2025-09-20" },
-  { id: 4, name: "Sneha Reddy", email: "sneha@email.com", phone: "+91 65432 10987", city: "Bangalore", orders: 3, spent: 1200, status: "New", joined: "2026-03-10" },
-  { id: 5, name: "Vikram Singh", email: "vikram@email.com", phone: "+91 54321 09876", city: "Jaipur", orders: 20, spent: 18500, status: "VIP", joined: "2025-08-05" },
-  { id: 6, name: "Ananya Iyer", email: "ananya@email.com", phone: "+91 43210 98765", city: "Chennai", orders: 6, spent: 3800, status: "Active", joined: "2026-01-12" },
-  { id: 7, name: "Deepak Joshi", email: "deepak@email.com", phone: "+91 32109 87654", city: "Pune", orders: 1, spent: 450, status: "Inactive", joined: "2026-02-28" },
-  { id: 8, name: "Kavita Nair", email: "kavita@email.com", phone: "+91 21098 76543", city: "Kochi", orders: 9, spent: 6700, status: "Active", joined: "2025-10-08" },
-];
 
 const statusColor: Record<string, string> = {
   Active: "bg-primary/15 text-primary",
@@ -23,6 +12,28 @@ const statusColor: Record<string, string> = {
 
 const Customers = () => {
   const [search, setSearch] = useState("");
+  const [customers, setCustomers] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch("http://localhost:3001/api/users")
+      .then(res => res.json())
+      .then(data => {
+        const formatted = data.map((u: any) => ({
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          phone: u.phone || "Not provided",
+          city: "Unknown", // Assuming city isn't in User model yet
+          orders: u.orders || 0,
+          spent: u.spent || 0,
+          status: "Active",
+          joined: new Date(u.createdAt).toISOString().split('T')[0]
+        }));
+        setCustomers(formatted);
+      })
+      .catch(err => console.error(err));
+  }, []);
+
   const filtered = customers.filter((c) =>
     c.name.toLowerCase().includes(search.toLowerCase()) || c.email.toLowerCase().includes(search.toLowerCase()) || c.city.toLowerCase().includes(search.toLowerCase())
   );

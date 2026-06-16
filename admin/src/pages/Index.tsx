@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import StatsCard from "@/components/admin/StatsCard";
 import OrdersTable from "@/components/admin/OrdersTable";
 import RevenueChart from "@/components/admin/RevenueChart";
@@ -5,6 +6,15 @@ import TopProducts from "@/components/admin/TopProducts";
 import { ShoppingCart, IndianRupee, Clock, Truck } from "lucide-react";
 
 const Dashboard = () => {
+  const [data, setData] = useState<any>(null);
+
+  useEffect(() => {
+    fetch("http://localhost:3001/api/analytics")
+      .then(res => res.json())
+      .then(setData)
+      .catch(console.error);
+  }, []);
+
   return (
     <div className="animate-fade-in min-w-0 overflow-hidden">
       <div className="mb-8">
@@ -13,15 +23,15 @@ const Dashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-        <StatsCard title="Total Orders" value="247" icon={ShoppingCart} variant="primary" trend="12% from last month" trendUp />
-        <StatsCard title="Total Revenue" value="₹1,87,450" icon={IndianRupee} variant="secondary" trend="8.2% from last month" trendUp />
-        <StatsCard title="Pending Orders" value="18" icon={Clock} variant="accent" trend="3 less than yesterday" trendUp />
-        <StatsCard title="Delivered Today" value="12" icon={Truck} variant="muted" trend="On track" trendUp />
+        <StatsCard title="Total Orders" value={data ? data.totalOrders : "..."} icon={ShoppingCart} variant="primary" trend="Up to date" trendUp />
+        <StatsCard title="Total Revenue" value={data ? `₹${data.totalRevenue.toLocaleString()}` : "..."} icon={IndianRupee} variant="secondary" trend="Up to date" trendUp />
+        <StatsCard title="Pending Orders" value={data ? data.pendingOrders : "..."} icon={Clock} variant="accent" trend="Needs attention" trendUp={false} />
+        <StatsCard title="Delivered Today" value={data ? data.totalOrders - data.pendingOrders : "..."} icon={Truck} variant="muted" trend="On track" trendUp />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-8">
-        <div className="lg:col-span-2"><RevenueChart /></div>
-        <TopProducts />
+        <div className="lg:col-span-2"><RevenueChart data={data?.recentRevenue} /></div>
+        <TopProducts data={data?.topProducts} />
       </div>
 
       <OrdersTable />

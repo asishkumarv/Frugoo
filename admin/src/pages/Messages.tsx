@@ -1,21 +1,25 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Trash2, CheckCheck } from "lucide-react";
 
-const initialMessages = [
-  { id: 1, name: "Sneha", email: "sneha@example.com", message: "Hi, how to order?", status: "READ", createdAt: "1/30/2026, 12:14:48 PM" },
-  { id: 2, name: "Rajesh Kumar", email: "rajesh@example.com", message: "When will my mangoes arrive?", status: "UNREAD", createdAt: "3/25/2026, 10:30:00 AM" },
-  { id: 3, name: "Priya Sharma", email: "priya@example.com", message: "Thanks for the quick delivery!", status: "REPLIED", createdAt: "3/24/2026, 3:45:12 PM" },
-  { id: 4, name: "Amit Patel", email: "amit@example.com", message: "Can I change my order?", status: "UNREAD", createdAt: "3/23/2026, 9:15:30 AM" },
-  { id: 5, name: "Sneha Reddy", email: "snehareddy@example.com", message: "Do you have organic fruits?", status: "READ", createdAt: "3/22/2026, 2:00:00 PM" },
-  { id: 6, name: "Vikram Singh", email: "vikram@example.com", message: "Great quality as always!", status: "REPLIED", createdAt: "3/20/2026, 11:20:45 AM" },
-  { id: 7, name: "Ananya Iyer", email: "ananya@example.com", message: "I'd like a refund please", status: "UNREAD", createdAt: "3/19/2026, 4:30:00 PM" },
-];
-
 const Messages = () => {
-  const [messages, setMessages] = useState(initialMessages);
+  const [messages, setMessages] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchMessages();
+  }, []);
+
+  const fetchMessages = async () => {
+    try {
+      const res = await fetch("http://localhost:3001/api/messages");
+      const data = await res.json();
+      setMessages(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const statusBadge = (status: string) => {
     switch (status) {
@@ -30,12 +34,32 @@ const Messages = () => {
     }
   };
 
-  const markReplied = (id: number) => {
-    setMessages(messages.map((m) => m.id === id ? { ...m, status: "REPLIED" } : m));
+  const markReplied = async (id: number) => {
+    try {
+      const res = await fetch(`http://localhost:3001/api/messages/${id}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "REPLIED" })
+      });
+      if (res.ok) {
+        setMessages(messages.map((m) => m.id === id ? { ...m, status: "REPLIED" } : m));
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const deleteMessage = (id: number) => {
-    setMessages(messages.filter((m) => m.id !== id));
+  const deleteMessage = async (id: number) => {
+    try {
+      const res = await fetch(`http://localhost:3001/api/messages/${id}`, {
+        method: "DELETE"
+      });
+      if (res.ok) {
+        setMessages(messages.filter((m) => m.id !== id));
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
@@ -66,7 +90,7 @@ const Messages = () => {
                 <TableCell className="text-muted-foreground">{msg.email}</TableCell>
                 <TableCell className="text-foreground max-w-[250px] truncate">{msg.message}</TableCell>
                 <TableCell>{statusBadge(msg.status)}</TableCell>
-                <TableCell className="text-muted-foreground text-sm">{msg.createdAt}</TableCell>
+                <TableCell className="text-muted-foreground text-sm">{new Date(msg.createdAt).toLocaleString()}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex gap-2 justify-end">
                     {msg.status !== "REPLIED" && (

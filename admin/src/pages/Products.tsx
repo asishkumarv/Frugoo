@@ -72,7 +72,7 @@ const Products = () => {
   const openEdit = (p: Product) => {
     setEditProduct(p);
     setForm({ name: p.name, category: p.category, price: String(p.price), stock: String(p.stock), unit: p.unit, image: p.image, description: p.description });
-    setImagePreview(p.image.startsWith("blob:") || p.image.startsWith("http") ? p.image : null);
+    setImagePreview(p.image);
     setDialogOpen(true);
   };
 
@@ -190,10 +190,10 @@ const Products = () => {
         {filtered.map((product) => (
           <div key={product.id} className="bg-card rounded-xl border border-border p-4 shadow-card hover:shadow-card-hover transition-all group">
             <div className="w-full h-20 mb-3 flex items-center justify-center rounded-lg bg-muted/30 overflow-hidden">
-              {product.image.startsWith("blob:") || product.image.startsWith("http") ? (
+              {product.image ? (
                 <img src={product.image} alt={product.name} className="w-full h-full object-contain" />
               ) : (
-                <span className="text-4xl">{product.image || "📦"}</span>
+                <span className="text-4xl">📦</span>
               )}
             </div>
             <h3 className="font-semibold text-foreground">{product.name}</h3>

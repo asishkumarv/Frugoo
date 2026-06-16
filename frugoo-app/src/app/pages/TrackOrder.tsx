@@ -9,27 +9,43 @@ export function TrackOrder() {
   const [trackingResult, setTrackingResult] = useState<any>(null);
   const [isTracking, setIsTracking] = useState(false);
 
-  const handleTrack = (e: React.FormEvent) => {
+  const handleTrack = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!orderId.trim()) return;
 
     setIsTracking(true);
-    setTimeout(() => {
-      setTrackingResult({
-        orderId: orderId,
-        status: "In Transit",
-        estimatedDelivery: "April 29, 2026",
-        currentLocation: "Hyderabad Distribution Center",
-        timeline: [
-          { status: "Order Placed", date: "April 27, 2026 - 10:30 AM", completed: true },
-          { status: "Order Confirmed", date: "April 27, 2026 - 10:45 AM", completed: true },
-          { status: "Packed & Ready", date: "April 28, 2026 - 08:15 AM", completed: true },
-          { status: "Out for Delivery", date: "April 28, 2026 - 02:30 PM", completed: true },
-          { status: "Delivered", date: "Expected: April 29, 2026", completed: false }
-        ]
-      });
+    setTrackingResult(null);
+
+    try {
+      const res = await fetch(`http://localhost:3001/api/orders/${orderId.trim()}`);
+      const data = await res.json();
+
+      if (data.success && data.order) {
+        const orderDate = new Date(data.order.date);
+        const estDelivery = new Date(orderDate);
+        estDelivery.setDate(estDelivery.getDate() + 2);
+
+        setTrackingResult({
+          orderId: data.order.id,
+          status: data.order.status,
+          estimatedDelivery: estDelivery.toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }),
+          currentLocation: data.order.status === 'Delivered' ? "Delivered to " + data.order.customer : "Frugoo Distribution Center",
+          timeline: [
+            { status: "Order Placed", date: orderDate.toLocaleString('en-IN'), completed: true },
+            { status: "Processing", date: "Preparing your fresh fruits", completed: data.order.status !== 'Pending' },
+            { status: "Out for Delivery", date: "On the way", completed: data.order.status === 'Shipped' || data.order.status === 'Delivered' },
+            { status: "Delivered", date: "Successfully Delivered", completed: data.order.status === 'Delivered' }
+          ]
+        });
+      } else {
+        alert("Order not found. Please check the order ID.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to track order");
+    } finally {
       setIsTracking(false);
-    }, 1000);
+    }
   };
 
   return (

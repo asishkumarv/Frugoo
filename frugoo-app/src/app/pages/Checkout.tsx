@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCart } from "../context/CartContext";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
@@ -11,7 +11,7 @@ import { ArrowLeft, CreditCard, Truck, Tag } from "lucide-react";
 import { toast } from "sonner";
 
 export function Checkout() {
-  const { cartItems, getSubtotal, getTax, getTotal } = useCart();
+  const { cartItems, getSubtotal, getTax, getTotal, clearCart } = useCart();
   const navigate = useNavigate();
   const [paymentMethod, setPaymentMethod] = useState("card");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -25,21 +25,20 @@ export function Checkout() {
   const discount = appliedCoupon ? (subtotal * appliedCoupon.discount) / 100 : 0;
   const total = subtotal + tax - discount;
 
-  // Predefined coupons
-  const coupons: { [key: string]: number } = {
-    "FRUGOO10": 10,
-    "FRESH20": 20,
-    "WELCOME15": 15,
-    "SAVE25": 25
-  };
-
-  const handleApplyCoupon = () => {
+  const handleApplyCoupon = async () => {
     const code = couponCode.toUpperCase().trim();
-    if (coupons[code]) {
-      setAppliedCoupon({ code, discount: coupons[code] });
-      toast.success(`Coupon applied! You saved ${coupons[code]}%`);
-    } else {
-      toast.error("Invalid coupon code");
+    if (!code) return;
+    try {
+      const res = await fetch(`http://localhost:3001/api/coupons/validate/${code}`);
+      const data = await res.json();
+      if (data.success) {
+        setAppliedCoupon({ code, discount: data.discount });
+        toast.success(`Coupon applied! You saved ${data.discount}%`);
+      } else {
+        toast.error(data.error || "Invalid coupon code");
+      }
+    } catch (err) {
+      toast.error("Error validating coupon");
     }
   };
 
@@ -49,18 +48,52 @@ export function Checkout() {
     toast.info("Coupon removed");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing(true);
     
-    // Simulate payment processing
-    setTimeout(() => {
-      navigate('/order-success');
-    }, 2000);
+    try {
+      const form = e.target as HTMLFormElement;
+      const formData = new FormData(form);
+      const customerName = `${formData.get('firstName')} ${formData.get('lastName')}`;
+      
+      const orderPayload = {
+        customer: customerName,
+        items: cartItems.map(item => `${item.quantity}x ${item.name}`),
+        total,
+        address: `${formData.get('address')}, ${formData.get('city')}, ${formData.get('state')} - ${formData.get('zip')}`,
+        phone: formData.get('phone'),
+        payment: paymentMethod,
+        couponCode: appliedCoupon ? appliedCoupon.code : undefined
+      };
+
+      const res = await fetch('http://localhost:3001/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderPayload)
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        toast.success("Order placed successfully!");
+        navigate('/order-success', { state: { orderId: data.order.id } });
+      } else {
+        toast.error(data.error || "Failed to place order");
+      }
+    } catch (err) {
+      toast.error("An error occurred");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
+  useEffect(() => {
+    if (cartItems.length === 0) {
+      navigate('/cart');
+    }
+  }, [cartItems.length, navigate]);
+
   if (cartItems.length === 0) {
-    navigate('/cart');
     return null;
   }
 
@@ -91,39 +124,39 @@ export function Checkout() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="firstName">First Name *</Label>
-                    <Input id="firstName" required className="mt-1" />
+                    <Input id="firstName" name="firstName" required className="mt-1" />
                   </div>
                   <div>
                     <Label htmlFor="lastName">Last Name *</Label>
-                    <Input id="lastName" required className="mt-1" />
+                    <Input id="lastName" name="lastName" required className="mt-1" />
                   </div>
                   <div className="md:col-span-2">
                     <Label htmlFor="email">Email *</Label>
-                    <Input id="email" type="email" required className="mt-1" />
+                    <Input id="email" name="email" type="email" required className="mt-1" />
                   </div>
                   <div className="md:col-span-2">
                     <Label htmlFor="phone">Phone Number *</Label>
-                    <Input id="phone" type="tel" required className="mt-1" />
+                    <Input id="phone" name="phone" type="tel" required className="mt-1" />
                   </div>
                   <div className="md:col-span-2">
                     <Label htmlFor="address">Street Address *</Label>
-                    <Input id="address" required className="mt-1" />
+                    <Input id="address" name="address" required className="mt-1" />
                   </div>
                   <div>
                     <Label htmlFor="city">City *</Label>
-                    <Input id="city" required className="mt-1" />
+                    <Input id="city" name="city" required className="mt-1" />
                   </div>
                   <div>
                     <Label htmlFor="state">State/Province *</Label>
-                    <Input id="state" required className="mt-1" />
+                    <Input id="state" name="state" required className="mt-1" />
                   </div>
                   <div>
                     <Label htmlFor="zip">PIN Code *</Label>
-                    <Input id="zip" required className="mt-1" />
+                    <Input id="zip" name="zip" required className="mt-1" />
                   </div>
                   <div>
                     <Label htmlFor="country">Country *</Label>
-                    <Input id="country" defaultValue="India" required className="mt-1" />
+                    <Input id="country" name="country" defaultValue="India" required className="mt-1" />
                   </div>
                 </div>
               </Card>

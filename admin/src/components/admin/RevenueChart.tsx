@@ -1,21 +1,16 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
-const data = [
-  { month: "Jan", revenue: 18500 },
-  { month: "Feb", revenue: 24200 },
-  { month: "Mar", revenue: 31800 },
-  { month: "Apr", revenue: 28400 },
-  { month: "May", revenue: 35600 },
-  { month: "Jun", revenue: 42100 },
-  { month: "Jul", revenue: 38900 },
-  { month: "Aug", revenue: 45300 },
-  { month: "Sep", revenue: 41200 },
-  { month: "Oct", revenue: 48700 },
-  { month: "Nov", revenue: 52100 },
-  { month: "Dec", revenue: 58400 },
+const defaultData = [
+  { name: "Mon", revenue: 18500 },
+  { name: "Tue", revenue: 24200 },
+  { name: "Wed", revenue: 31800 },
+  { name: "Thu", revenue: 28400 },
+  { name: "Fri", revenue: 35600 },
+  { name: "Sat", revenue: 42100 },
+  { name: "Sun", revenue: 38900 },
 ];
 
-const RevenueChart = () => (
+const RevenueChart = ({ data = defaultData }: { data?: any[] }) => (
   <div className="bg-card rounded-xl shadow-card p-5 animate-fade-in">
     <h2 className="text-lg font-display font-bold text-foreground mb-4">Revenue Overview</h2>
     <ResponsiveContainer width="100%" height={280}>
@@ -27,7 +22,7 @@ const RevenueChart = () => (
           </linearGradient>
         </defs>
         <CartesianGrid strokeDasharray="3 3" stroke="hsl(140 15% 88%)" />
-        <XAxis dataKey="month" tick={{ fontSize: 12, fill: "hsl(150 10% 45%)" }} axisLine={false} tickLine={false} />
+        <XAxis dataKey="name" tick={{ fontSize: 12, fill: "hsl(150 10% 45%)" }} axisLine={false} tickLine={false} />
         <YAxis tick={{ fontSize: 12, fill: "hsl(150 10% 45%)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
         <Tooltip
           contentStyle={{

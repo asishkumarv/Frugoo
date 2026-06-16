@@ -1,4 +1,4 @@
-import { Link, useLocation, useNavigate } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSidebarContext } from "@/contexts/SidebarContext";
 import {
@@ -25,7 +25,7 @@ const SidebarBody = ({ collapsed, onNavClick }: { collapsed: boolean; onNavClick
   const navigate = useNavigate();
   const { logout } = useAuth();
 
-  const handleLogout = () => { logout(); navigate({ to: "/login" }); };
+  const handleLogout = () => { logout(); navigate("/login"); };
 
   return (
     <>

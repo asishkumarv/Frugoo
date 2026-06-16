@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ const Login = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (isAuthenticated) navigate({ to: "/", replace: true });
+    if (isAuthenticated) navigate("/", { replace: true });
   }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -24,10 +24,10 @@ const Login = () => {
     setError("");
     setLoading(true);
     await new Promise((r) => setTimeout(r, 600));
-    const success = login(email, password);
+    const success = await login(email, password);
     setLoading(false);
     if (success) {
-      navigate({ to: "/", replace: true });
+      navigate("/", { replace: true });
     } else {
       setError("Invalid email or password. Try admin@frugoo.com / admin123");
     }

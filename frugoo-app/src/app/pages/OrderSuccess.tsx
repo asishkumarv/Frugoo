@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { CheckCircle2, Package, Truck, Home } from "lucide-react";
@@ -17,10 +17,23 @@ export function OrderSuccess() {
     return date;
   });
 
+  const location = useLocation();
+  const orderId = location.state?.orderId || orderNumber;
+  const [orderData, setOrderData] = useState<any>(null);
+
   useEffect(() => {
-    // Clear cart only once when component mounts
     clearCart();
-  }, []); // Empty dependency array - runs only once
+    if (location.state?.orderId) {
+      fetch(`http://localhost:3001/api/orders/${location.state.orderId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            setOrderData(data.order);
+          }
+        })
+        .catch(console.error);
+    }
+  }, [location.state?.orderId]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-lime-50">
@@ -43,8 +56,30 @@ export function OrderSuccess() {
           <Card className="p-8 mb-6">
             <div className="text-center mb-6">
               <p className="text-sm text-gray-600 mb-2">Order Number</p>
-              <p className="text-2xl font-bold text-green-700">#{orderNumber}</p>
+              <p className="text-2xl font-bold text-green-700">#{orderId}</p>
             </div>
+            
+            {orderData && (
+              <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+                <h3 className="font-semibold text-lg mb-4">Order Details</h3>
+                <div className="space-y-2 mb-4">
+                  {(orderData.items || []).map((item: string, i: number) => (
+                    <div key={i} className="flex justify-between text-gray-700">
+                      <span>{item}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="border-t border-gray-200 pt-4 flex justify-between font-bold text-lg">
+                  <span>Total Paid</span>
+                  <span>₹{orderData.total}</span>
+                </div>
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <p className="text-sm text-gray-600 font-semibold mb-1">Shipping To:</p>
+                  <p className="text-sm text-gray-600">{orderData.customer}</p>
+                  <p className="text-sm text-gray-600">{orderData.address}</p>
+                </div>
+              </div>
+            )}
 
             <div className="bg-green-50 rounded-lg p-6 mb-6">
               <div className="flex items-center gap-4 mb-4">
