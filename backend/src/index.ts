@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
+import Razorpay from 'razorpay';
+import crypto from 'crypto';
 
 dotenv.config();
 
@@ -11,6 +13,11 @@ const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
+
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID || '',
+  key_secret: process.env.RAZORPAY_KEY_SECRET || '',
+});
 
 // Auth Routes
 app.post('/api/auth/register', async (req, res) => {
@@ -231,6 +238,84 @@ app.delete('/api/coupons/:id', async (req, res) => {
     res.json({ success: true });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// Payment Routes
+app.get('/api/payment/razorpay/key', (req, res) => {
+  res.json({ key: process.env.RAZORPAY_KEY_ID || '' });
+});
+
+app.post('/api/payment/razorpay/create-order', async (req, res) => {
+  try {
+    const { amount, currency = "INR" } = req.body;
+    
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+       return res.status(500).json({ success: false, error: "Razorpay keys are not configured on the server." });
+    }
+
+    const options = {
+      amount: Math.round(amount * 100), // amount in the smallest currency unit
+      currency,
+      receipt: `rcpt_${Date.now()}`
+    };
+
+    const order = await razorpay.orders.create(options);
+    res.json({ success: true, order });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/payment/razorpay/verify', async (req, res) => {
+  try {
+    const { 
+      razorpay_order_id, 
+      razorpay_payment_id, 
+      razorpay_signature, 
+      orderData 
+    } = req.body;
+
+    const secret = process.env.RAZORPAY_KEY_SECRET || '';
+    const shasum = crypto.createHmac('sha256', secret);
+    shasum.update(`${razorpay_order_id}|${razorpay_payment_id}`);
+    const digest = shasum.digest('hex');
+
+    if (digest !== razorpay_signature) {
+      return res.status(400).json({ success: false, error: 'Transaction signature invalid!' });
+    }
+
+    // Payment is successful, create the order in DB
+    if (orderData.couponCode) {
+      const coupon = await prisma.coupon.findUnique({ where: { code: orderData.couponCode } });
+      if (coupon) {
+        if (coupon.status !== 'Active' || coupon.used >= coupon.maxUses) {
+          return res.status(400).json({ success: false, error: 'Invalid or expired coupon' });
+        }
+        await prisma.coupon.update({
+          where: { code: orderData.couponCode },
+          data: { used: coupon.used + 1 }
+        });
+      }
+    }
+
+    const newOrder = await prisma.order.create({
+      data: {
+        id: `ORD-${Date.now()}`,
+        customer: orderData.customer,
+        items: orderData.items,
+        total: orderData.total,
+        status: "Paid", // Automatically marked as paid
+        date: new Date().toISOString(),
+        address: orderData.address,
+        phone: orderData.phone,
+        payment: "Online (Razorpay)"
+      }
+    });
+
+    res.json({ success: true, order: newOrder, paymentId: razorpay_payment_id });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 

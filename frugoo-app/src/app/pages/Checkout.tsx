@@ -10,10 +10,16 @@ import { useNavigate, Link } from "react-router";
 import { ArrowLeft, CreditCard, Truck, Tag } from "lucide-react";
 import { toast } from "sonner";
 
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
+
 export function Checkout() {
   const { cartItems, getSubtotal, getTax, getTotal, clearCart } = useCart();
   const navigate = useNavigate();
-  const [paymentMethod, setPaymentMethod] = useState("card");
+  const [paymentMethod, setPaymentMethod] = useState("online");
   const [isProcessing, setIsProcessing] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number } | null>(null);
@@ -48,6 +54,16 @@ export function Checkout() {
     toast.info("Coupon removed");
   };
 
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing(true);
@@ -56,33 +72,129 @@ export function Checkout() {
       const form = e.target as HTMLFormElement;
       const formData = new FormData(form);
       const customerName = `${formData.get('firstName')} ${formData.get('lastName')}`;
+      const email = formData.get('email') as string;
+      const phone = formData.get('phone') as string;
       
       const orderPayload = {
         customer: customerName,
         items: cartItems.map(item => `${item.quantity}x ${item.name}`),
         total,
         address: `${formData.get('address')}, ${formData.get('city')}, ${formData.get('state')} - ${formData.get('zip')}`,
-        phone: formData.get('phone'),
-        payment: paymentMethod,
+        phone: phone,
+        payment: paymentMethod === 'online' ? 'Online' : 'Cash on Delivery',
         couponCode: appliedCoupon ? appliedCoupon.code : undefined
       };
 
-      const res = await fetch('https://frugoo.onrender.com/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderPayload)
-      });
-      const data = await res.json();
+      if (paymentMethod === "online") {
+        const isLoaded = await loadRazorpayScript();
+        if (!isLoaded) {
+          toast.error("Razorpay SDK failed to load. Are you connected to the internet?");
+          setIsProcessing(false);
+          return;
+        }
 
-      if (data.success) {
-        toast.success("Order placed successfully!");
-        navigate('/order-success', { state: { orderId: data.order.id } });
+        // Get the public key
+        const keyRes = await fetch('https://frugoo.onrender.com/api/payment/razorpay/key');
+        const keyData = await keyRes.json();
+        
+        if (!keyData.key) {
+          toast.error("Razorpay is not configured on the server.");
+          setIsProcessing(false);
+          return;
+        }
+
+        // Create Order on Backend
+        const orderRes = await fetch('https://frugoo.onrender.com/api/payment/razorpay/create-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount: total, currency: "INR" })
+        });
+        const orderDataResult = await orderRes.json();
+
+        if (!orderDataResult.success) {
+          toast.error(orderDataResult.error || "Failed to initiate payment");
+          setIsProcessing(false);
+          return;
+        }
+
+        const options = {
+          key: keyData.key,
+          amount: orderDataResult.order.amount,
+          currency: orderDataResult.order.currency,
+          name: "Frugoo",
+          description: "Fresh Fruits Delivery",
+          order_id: orderDataResult.order.id,
+          handler: async function (response: any) {
+            // Verify payment
+            try {
+              const verifyRes = await fetch('https://frugoo.onrender.com/api/payment/razorpay/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_signature: response.razorpay_signature,
+                  orderData: orderPayload
+                })
+              });
+              const verifyData = await verifyRes.json();
+
+              if (verifyData.success) {
+                toast.success("Payment successful!");
+                clearCart();
+                navigate('/order-success', { state: { orderId: verifyData.order.id } });
+              } else {
+                toast.error(verifyData.error || "Payment verification failed");
+              }
+            } catch (err) {
+              toast.error("Error verifying payment");
+            } finally {
+              setIsProcessing(false);
+            }
+          },
+          prefill: {
+            name: customerName,
+            email: email,
+            contact: phone
+          },
+          theme: {
+            color: "#16a34a"
+          },
+          modal: {
+            ondismiss: function() {
+              setIsProcessing(false);
+              toast.info("Payment cancelled");
+            }
+          }
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.on('payment.failed', function (response: any) {
+          toast.error(response.error.description || "Payment failed");
+          setIsProcessing(false);
+        });
+        rzp.open();
+        
       } else {
-        toast.error(data.error || "Failed to place order");
+        // COD Logic
+        const res = await fetch('https://frugoo.onrender.com/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(orderPayload)
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          toast.success("Order placed successfully!");
+          clearCart();
+          navigate('/order-success', { state: { orderId: data.order.id } });
+        } else {
+          toast.error(data.error || "Failed to place order");
+        }
+        setIsProcessing(false);
       }
     } catch (err) {
       toast.error("An error occurred");
-    } finally {
       setIsProcessing(false);
     }
   };
@@ -170,51 +282,25 @@ export function Checkout() {
 
                 <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="mb-6">
                   <div className="flex items-center space-x-2 p-4 border rounded-lg">
-                    <RadioGroupItem value="card" id="card" />
-                    <Label htmlFor="card" className="flex-1 cursor-pointer">
-                      Credit/Debit Card
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2 p-4 border rounded-lg">
-                    <RadioGroupItem value="upi" id="upi" />
-                    <Label htmlFor="upi" className="flex-1 cursor-pointer">
-                      UPI Payment
+                    <RadioGroupItem value="online" id="online" />
+                    <Label htmlFor="online" className="flex-1 cursor-pointer font-medium">
+                      Online Payment (UPI, Credit/Debit Card)
                     </Label>
                   </div>
                   <div className="flex items-center space-x-2 p-4 border rounded-lg">
                     <RadioGroupItem value="cod" id="cod" />
-                    <Label htmlFor="cod" className="flex-1 cursor-pointer">
+                    <Label htmlFor="cod" className="flex-1 cursor-pointer font-medium">
                       Cash on Delivery
                     </Label>
                   </div>
                 </RadioGroup>
 
-                {paymentMethod === "card" && (
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="cardNumber">Card Number *</Label>
-                      <Input id="cardNumber" placeholder="1234 5678 9012 3456" required className="mt-1" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="expiry">Expiry Date *</Label>
-                        <Input id="expiry" placeholder="MM/YY" required className="mt-1" />
-                      </div>
-                      <div>
-                        <Label htmlFor="cvv">CVV *</Label>
-                        <Input id="cvv" placeholder="123" required className="mt-1" />
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="cardName">Cardholder Name *</Label>
-                      <Input id="cardName" required className="mt-1" />
-                    </div>
-                  </div>
-                )}
-                {paymentMethod === "upi" && (
-                  <div>
-                    <Label htmlFor="upiId">UPI ID *</Label>
-                    <Input id="upiId" placeholder="yourname@upi" required className="mt-1" />
+                {paymentMethod === "online" && (
+                  <div className="bg-green-50 p-4 rounded-lg border border-green-100 flex items-center gap-3">
+                    <img src="https://razorpay.com/assets/razorpay-logo.svg" alt="Razorpay" className="h-6" />
+                    <p className="text-sm text-green-800">
+                      You will be redirected to Razorpay's secure checkout to complete your payment using UPI, Credit/Debit Card, or Netbanking.
+                    </p>
                   </div>
                 )}
               </Card>

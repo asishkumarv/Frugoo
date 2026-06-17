@@ -1,8 +1,5 @@
 import { Card } from "../components/ui/card";
-import { Heart, Leaf, Users, Award } from "lucide-react";
-import { ImageWithFallback } from "../components/figma/ImageWithFallback";
-import ownerImg from "../../imports/a-S0-YBz3Y.jpg";
-import memberHaritha from "../../imports/b-CQwUGOvQ.jpg";
+import { Heart, Leaf, Users, Award, User } from "lucide-react";
 
 export function About() {
   return (
@@ -121,34 +118,21 @@ export function About() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
-            <Card className="overflow-hidden hover:shadow-xl transition-shadow duration-300 group">
-              <div className="overflow-hidden">
-                <ImageWithFallback
-                  src={ownerImg}
-                  alt="R Krishna Chaitanya"
-                  className="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-300"
-                  style={{ objectPosition: 'center 25%' }}
-                />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto pt-10">
+            <Card className="relative overflow-visible hover:shadow-xl transition-shadow duration-300 text-center p-8 pt-12">
+              <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-20 h-20 bg-white rounded-full border-[3px] border-green-600 flex items-center justify-center shadow-sm">
+                <User className="h-10 w-10 text-slate-400" strokeWidth={1.5} />
               </div>
-              <div className="p-6 text-center">
-                <h3 className="text-xl font-semibold mb-1">R Krishna Chaitanya</h3>
-                <p className="text-green-600">Founder</p>
-              </div>
+              <h3 className="text-xl font-bold mb-2">R Krishna Chaitanya</h3>
+              <p className="text-green-600 text-sm font-bold tracking-wider uppercase">Founder</p>
             </Card>
 
-            <Card className="overflow-hidden hover:shadow-xl transition-shadow duration-300 group">
-              <div className="h-80 flex items-center justify-center bg-gray-50">
-                <ImageWithFallback
-                  src={memberHaritha}
-                  alt="E. Haritha Reddy"
-                  className="w-full h-full object-contain"
-                />
+            <Card className="relative overflow-visible hover:shadow-xl transition-shadow duration-300 text-center p-8 pt-12">
+              <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-20 h-20 bg-white rounded-full border-[3px] border-green-600 flex items-center justify-center shadow-sm">
+                <User className="h-10 w-10 text-slate-400" strokeWidth={1.5} />
               </div>
-              <div className="p-6 text-center">
-                <h3 className="text-xl font-semibold mb-1">E. Haritha Reddy</h3>
-                <p className="text-green-600">Co-Founder</p>
-              </div>
+              <h3 className="text-xl font-bold mb-2">E. Haritha Reddy</h3>
+              <p className="text-green-600 text-sm font-bold tracking-wider uppercase">Co-Founder</p>
             </Card>
           </div>
         </div>

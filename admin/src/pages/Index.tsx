@@ -26,7 +26,7 @@ const Dashboard = () => {
         <StatsCard title="Total Orders" value={data ? data.totalOrders : "..."} icon={ShoppingCart} variant="primary" trend="Up to date" trendUp />
         <StatsCard title="Total Revenue" value={data ? `₹${data.totalRevenue.toLocaleString()}` : "..."} icon={IndianRupee} variant="secondary" trend="Up to date" trendUp />
         <StatsCard title="Pending Orders" value={data ? data.pendingOrders : "..."} icon={Clock} variant="accent" trend="Needs attention" trendUp={false} />
-        <StatsCard title="Delivered Today" value={data ? data.totalOrders - data.pendingOrders : "..."} icon={Truck} variant="muted" trend="On track" trendUp />
+        <StatsCard title="Delivered Today" value={data ? String(data.totalOrders - data.pendingOrders) : "..."} icon={Truck} variant="muted" trend="On track" trendUp />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-8">
